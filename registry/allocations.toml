@@ -2835,3 +2835,102 @@ addr    = 0x40184266
 size    = 4
 expect  = "416a6a2c"       # id 374: value display -> LT/MT/HT
 from_symbol = "fmt_lmh"
+
+# ------------------------------------------------------- 0014-usb10 (xynta, 2026-11-22)
+#
+# Main L/R and the 8 voice outputs in one Overbridge pass at 16 bit: IN alternate 8
+# (986 bytes) in a rebuilt configuration descriptor, a 10-byte channel map and a packer
+# path for ten channels. Code and descriptor in the routine of the hidden HH TEST
+# machine (50), the one TEST routine 0009 left; its machine_fn entry -> DISABLE.
+
+[[pool]]
+name   = "cave13"
+start  = 0x4010d680
+end    = 0x4010d994          # exclusive; 788 B
+stock  = "code"
+expect_sha256 = "8b0d8847335520e5ed6eb5f09cf3b2a4b7e89f31a73419a7d241579d8ca6b3b3"
+status = "probably-verified"
+note   = """
+The routine of hidden machine 50 (HH TEST), from its entry to the next routine (CH
+METALLIC 0x4010d994); it ends in `jmp 0x40114e86` at 0x4010d98c and a zero word.
+Reachability, static (2026-11-22, cave4's method: every even-aligned long in the image
+and every operand of the disassembly): the only reference into the range is its own
+machine_fn entry 0x402544f8; the one other long that lands inside (0x4001b3c2 ->
+0x4010d8af) is the tail of `movel %a4,%a2@(16400)` and the head of the next instruction,
+not a pointer. Branches inside stay inside or leave it (to FUNC. GEN.'s helper 0x4010d5b4,
+which stays stock). Machine 50 is never offered (voice mask 0 at 0x4018d92d), and 0014
+points its machine_fn entry at DISABLE, so a kit naming it cannot run this code.
+At run time (analog-emu, 2026-11-22): its entry was never reached in boots, playing,
+kit and pattern changes and SysEx dumps (tools/rytm_mods/usb10.py, docs/rytm/mods.md).
+"""
+
+[[cave]]
+owner   = "0014-usb10"
+addr    = 0x4010d680
+size    = 0x314
+section = ".text"
+note    = "map_gate, map10, pack_gate, pack10 and the 432-byte configuration descriptor."
+
+[[patch]]
+owner   = "0014-usb10"
+addr    = 0x402544f8
+size    = 4
+expect  = "4010d680"       # machine_fn[50] (HH TEST) -> DISABLE; its old code is cave13
+replace = "4010d11c"
+
+[[patch]]
+owner   = "0014-usb10"
+addr    = 0x40236e48
+size    = 4
+expect  = "402a23be"       # USB mode 3 (OVERBRIDGE): its configuration descriptor
+from_symbol = "cfg_desc"
+
+[[patch]]
+owner   = "0014-usb10"
+addr    = 0x40236e4c
+size    = 4
+expect  = "0000019e"       # ... and its length, 414 -> 432
+replace = "000001b0"
+
+# v2 (2026-11-24): the packer's gap path and the reader's lead guard, in the tails of two pools
+# that 0009/0011 leave free in every build (cave6 past 0011's claim, cave7 past 0009's).
+[[cave]]
+owner   = "0014-usb10"
+addr    = 0x401104a4
+size    = 0x70
+section = ".u10g"
+note    = "gap_gate: the reader skips, and the count shows, the audio of every frame with no packet (10 channels)."
+
+[[cave]]
+owner   = "0014-usb10"
+addr    = 0x4010fbc8
+size    = 0x50
+section = ".u10l"
+note    = "lead_guard: the writer's lead back into 64..168 (to 110) before pack10 reads."
+
+# The packer's gap path (frames went by with no packet): 10 channels go to gap_gate.
+[[detour]]
+owner  = "0014-usb10"
+addr   = 0x40005932
+size   = 6
+expect = "2039402acd80"
+entry  = "gap_gate"
+rejoin = "none"
+
+# The IN channel map's data stage: 10 bytes go to map10, everything else to stock.
+[[detour]]
+owner  = "0014-usb10"
+addr   = 0x400057c6
+size   = 6
+expect = "202f00087208"
+entry  = "map_gate"
+rejoin = "none"
+
+# The IN packer where its staging copy starts: ten channels go to pack10.
+[[detour]]
+owner  = "0014-usb10"
+addr   = 0x40005a62
+size   = 6
+expect = "41f98000ad04"
+entry  = "pack_gate"
+rejoin = "none"

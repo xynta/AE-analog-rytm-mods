@@ -1,0 +1,39 @@
+[mod]
+id      = "0014-usb10"
+title   = "USB10: Main and all eight voice outputs in one Overbridge pass, 16 bit"
+
+# Not in the default builds (xynta builds it into its release images).
+enabled = false
+
+# re-only | built | hardware-verified | retracted
+status  = "built"
+
+summary = """
+Stock OS 1.74 streams at most 8 channels to the computer (its channel map holds 8 codes,
+its largest IN alternate setting is 888 bytes), so Main L/R and the 8 voice outputs need
+two passes. This mod adds a tenth way, nothing else changes:
+
+- IN alternate setting 8 on interface 0: endpoint 0x83, 986 bytes (6 + 49 frames x 10 x 2),
+  after the stock alternates 1..7, which keep their sizes. The configuration descriptor
+  is rebuilt here (432 bytes, the stock 414 plus that interface and its endpoint) and the
+  OVERBRIDGE mode's descriptor table entry points at it.
+- A 10-byte channel map (vendor request 0x41 1, wIndex 0): all ten codes must name a
+  source (0x80..0x87, 0xA0, 0xA1; 0xFE reads word 0 as stock), or the request stalls and
+  nothing changes. The 8-byte map, the OUT map, the stored maps (0x41 3, 0xC1 3) and the
+  map the OS applies at USB start are the stock code, untouched.
+- With ten channels the packer reads the codec ring straight into the packet, 16 bit
+  (the top 16 bits, little endian, as stock), whatever the bit-depth request said: 24 bit
+  could not fit one full-speed packet. Fewer channels run the stock packer.
+- v2 (2026-11-24): with ten channels a gap in the host's polling (frames with no packet,
+  as when another device on the hub re-enumerates) moves the reader by the audio of every
+  frame missed and the header's frame count by the same, so the host fills exactly what
+  went; stock moves both by 48 whatever the gap, which left the reader whole 224-frame rings
+  off and the loss uncounted. Before each read the writer's lead is checked and put back
+  to the middle of the ring if it left 64..168 frames (a forward move counted).
+
+Its code and the descriptor sit in the routine of the hidden HH TEST machine (50), whose
+machine_fn entry points at DISABLE, as 0009 does with the other TEST machines.
+"""
+
+[sources]
+stub = "stub.s"
