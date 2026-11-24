@@ -62,6 +62,13 @@ addr    = 0x402a28e0
 size    = {size_text}
 section = ".text"
 note    = "duck_gate, the four page gates, the COMP view's page list, the DUCK page, settings, state and strings."
+
+[[cave]]
+owner   = "{OWNER}"
+addr    = 0x402a2e28
+size    = 0x1d8
+section = ".tab"
+note    = "xynta: the settings kept in the kit (dk_*), after 0000's block to the end of cave2."
 '''
 
 # The engine: the audio interrupt's call of vca_frame.

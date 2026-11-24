@@ -16,9 +16,14 @@ after it and scales the words of every voice but the key's by a gain that dips w
 the key track's voice hits.
 
 FX track, AMP (COMP) pressed twice: the DUCK page - SRC (OFF, or the key track),
-DEP, ATK, HLD, REL. Global settings, held in RAM (SRC OFF at power-up). The key is
-the source voice's own audio as the codec captured it; the delay and reverb returns
-are not ducked.
+DEP, ATK, HLD, REL. Kept in the kit (xynta patch): the FX track's unused
+parameter words index 0 and 29, XOR the defaults, so DUCK follows kit and pattern
+changes and survives a power cycle; a kit without it reads SRC OFF.
+v4 (xynta): the key is the source track's note flag in the audio
+interrupt (no latency; the codec's audio key came ~6.7 ms late), and each track has
+its own depth 0..127 (hold its pad on the DUCK page and turn DEP), kept in its
+sound's spare byte (sound word 0 bits 8..14; CHR is bits 0..6). The delay and
+reverb returns are not ducked.
 
 The page hooks are shared with 0010's page: 0012's detours are the first link of a
 chain and pass everything else to 0010, or to stock without it (build.py chains).
@@ -26,6 +31,8 @@ chain and pass everything else to 0010, or to stock without it (build.py chains)
 
 # Its code sits where 0002 lives (cave2, after 0011's); the FX build has no 0002.
 excludes = ["0002-euclid-accents"]
+# dk_store marks the kit's parameter bank through 0000's conventions and its .tab
+# claim sits after 0000's block: build it with 0000 (every 0012 build does).
 
 [sources]
 stub = "stub.s"

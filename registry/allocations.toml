@@ -118,7 +118,6 @@ addr  = 0x402a2d38
 size  = 0xec
 note  = "The shared runtime: amount and dial-stop tables, decimal formatter, LCG draw, sound plumbing, FUNC test. MKII: 0x402ccebc in cave1."
 
-
 # ------------------------------------------------------- 0012-duck
 #
 # DUCK: a track-keyed ducker on the voices' VCA words, and its page (page 12) behind
@@ -133,6 +132,13 @@ addr    = 0x402a28e0
 size    = 0x458
 section = ".text"
 note    = "duck_gate, the four page gates, the COMP view's page list, the DUCK page, settings, state and strings."
+
+[[cave]]
+owner   = "0012-duck"
+addr    = 0x402a2e28
+size    = 0x1d8
+section = ".tab"
+note    = "xynta: the settings kept in the kit (dk_*), after 0000's block to the end of cave2."
 
 [[patch]]
 owner   = "0012-duck"
