@@ -1,0 +1,34 @@
+[mod]
+id      = "0015-remote"
+title   = "GHOST REMOTE: the Rytm MKI driven, read and tested over SysEx (ping, status, keys, encoders, screen, read)"
+
+# Not in the default builds (xynta builds it into its release images).
+enabled = false
+
+# re-only | built | hardware-verified | retracted
+status  = "built"
+
+summary = """
+SysEx command 0x5F of the Rytm (F0 00 20 3C 07 00 5F <sub> <seq> <args> F7), the OT's GHOST REMOTE framing.
+The OS's SysEx router (0x40082104) looks the command up in the Rytm's 128-entry table (0x4024a2b8); stock
+sends 0x5F to its dump receiver, which ignores it. 0015 points that entry at its own handler: nothing runs
+until a request arrives. Replies go back on the port the request came from, through the stock SysEx writer
+(the dumps' own), as F0 00 20 3C 07 00 5F <sub|40> <seq> <status> <payload 8-in-7> F7.
+
+  01 PING     protocol, version, which mods the running image carries (read from its own bytes)
+  02 STATUS   playing, active and queued pattern, active kit, the 12 key groups' masks
+  03 KEY      slot (8 x group + bit, the panel's wire numbering), down or up: one edge into the OS's own
+              key path (0x400803aa, the panel parser's), so FUNC held + another key works as on the panel
+  04 ENC      encoder by the panel's wire channel (0..8) and a signed delta, into the panel parser's encoder path
+  05 SCREEN   the framebuffer on glass (the one the LCD flush last sent), 4 pages x 128 columns
+  06 READ     1..256 bytes of DDR, SRAM or CS1: read only, no write command exists
+  0C RELEASE  every key group let up
+
+Key and encoder calls run with interrupts masked (SR 0x2700), as the panel's UART interrupt runs them, so the
+UI task sees an edge only once the OS's own handler has finished with it. No RAM is claimed: the reply is built
+on the MIDI task's stack (about 1.1 KB of its ~32 KB). Code in the routines of the hidden BD TEST (44) and MT
+TEST (49) machines, whose machine_fn entries point at DISABLE.
+"""
+
+[sources]
+stub = "stub.s"

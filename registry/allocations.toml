@@ -2934,3 +2934,75 @@ size   = 6
 expect = "41f98000ad04"
 entry  = "pack_gate"
 rejoin = "none"
+
+# ------------------------------------------------------- 0015-remote (xynta, 2026-11-22)
+#
+# GHOST REMOTE: SysEx command 0x5F of the Rytm (the OS's 128-entry command table at 0x4024a2b8; stock sends 0x5F
+# to its dump receiver, which ignores it) answered by our handler: ping, status, keys, encoders, screen, read.
+# Code in the routines of the hidden BD TEST (44) and MT TEST (49) machines; their machine_fn entries -> DISABLE.
+
+[[pool]]
+name   = "cave14"
+start  = 0x40116d1a
+end    = 0x40116fe6          # exclusive; 716 B
+stock  = "code"
+expect_sha256 = "a11256465acc90064444cf9392adb2bda015b1d97e9b1ed3048d64fc3f3bfc14"
+status = "probably-verified"
+note   = """
+The routine of hidden machine 44 (BD TEST), from its entry to the next routine, 0x40116fe6, a helper the audio
+interrupt takes by address (lea at 0x40119a98) and which stays stock; BD TEST ends in `jmp 0x40114e86` at
+0x40116fe0. Reachability, static (cave4's method, 2026-11-22): the only reference into the range is its own
+machine_fn entry 0x402544e0. Machine 44 is never offered (voice mask 0 at 0x4018d921); 0015 points its machine_fn
+entry at DISABLE. At run time on the stock OS (analog-emu, 2026-11-22, breakpoints on this entry and on cave15's): never
+reached in a cold boot, nor in 6 min of play with 17 pattern and kit changes, a stop and play, a kit save and 6 SysEx
+dump rounds (96 dumps, all good); the same breakpoint stops at the SysEx router on a dump request.
+"""
+
+[[pool]]
+name   = "cave15"
+start  = 0x40117038
+end    = 0x40117128          # exclusive; 240 B
+stock  = "code"
+expect_sha256 = "785b76306e74298b86dd6f7b2c88a95c46be1a8515d75f2dad8bc1d564a8b398"
+status = "probably-verified"
+note   = """
+The routine of hidden machine 49 (MT TEST), from its entry to the next routine (BT TEST 0x40117128); it ends in
+`jmp 0x40114e86` at 0x40117122. The only reference into the range is its machine_fn entry 0x402544f4 (same scan).
+Machine 49 is never offered (voice mask 0); 0015 points its machine_fn entry at DISABLE. At run time: never reached
+in the stock runs named under cave14.
+"""
+
+[[cave]]
+owner   = "0015-remote"
+addr    = 0x40116d1a
+size    = 0x2cc
+section = ".text"
+note    = "ghr_entry and the commands."
+
+[[cave]]
+owner   = "0015-remote"
+addr    = 0x40117038
+size    = 0xf0
+section = ".ghr2"
+note    = "The reply's framing and the read ranges, when .text does not hold them."
+
+[[patch]]
+owner   = "0015-remote"
+addr    = 0x402544e0
+size    = 4
+expect  = "40116d1a"       # machine_fn[44] (BD TEST) -> DISABLE; its old code is cave14
+replace = "4010d11c"
+
+[[patch]]
+owner   = "0015-remote"
+addr    = 0x402544f4
+size    = 4
+expect  = "40117038"       # machine_fn[49] (MT TEST) -> DISABLE; its old code is cave15
+replace = "4010d11c"
+
+[[patch]]
+owner   = "0015-remote"
+addr    = 0x4024a434
+size    = 4
+expect  = "40081010"       # the Rytm's SysEx command 0x5F: stock's dump receiver (ignores it) -> GHOST REMOTE
+from_symbol = "ghr_entry"
